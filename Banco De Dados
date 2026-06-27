@@ -1,103 +1,146 @@
-// =========================
-// MINI CATÁLOGO DE LOJA
-// =========================
+-- =========================================
+-- 1. CRIAÇÃO DAS TABELAS (DDL)
+-- =========================================
 
-// 1. DADOS (5 produtos)
-let produtos = [
-  { id: 3, nome: "Mouse Gamer", preco: 120.0 },
-  { id: 1, nome: "Teclado Mecânico", preco: 250.0 },
-  { id: 5, nome: "Monitor 24\"", preco: 900.0 },
-  { id: 2, nome: "Headset", preco: 180.0 },
-  { id: 4, nome: "Mousepad", preco: 40.0 }
-];
+CREATE TABLE produtos (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nome VARCHAR(100) NOT NULL,
+    preco DECIMAL(10,2) NOT NULL,
+    estoque INT DEFAULT 0
+);
 
-// 2. LISTAR PRODUTOS
-function listarProdutos(lista) {
-  console.log("\n--- LISTA DE PRODUTOS ---");
-  lista.forEach(p => {
-    console.log(`ID: ${p.id} | Nome: ${p.nome} | Preço: R$ ${p.preco}`);
-  });
-}
+CREATE TABLE clientes (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nome VARCHAR(100) NOT NULL,
+    email VARCHAR(100) UNIQUE,
+    total_compras DECIMAL(10,2) DEFAULT 0
+);
 
-// 3. ORDENAÇÃO (Insertion Sort por preço - do menor para o maior)
-function ordenarPorPreco(lista) {
-  let arr = [...lista];
+CREATE TABLE pedidos (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    cliente_id INT,
+    produto_id INT,
+    quantidade INT,
+    valor_total DECIMAL(10,2),
+    data_pedido TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (cliente_id) REFERENCES clientes(id),
+    FOREIGN KEY (produto_id) REFERENCES produtos(id)
+);
 
-  for (let i = 1; i < arr.length; i++) {
-    let atual = arr[i];
-    let j = i - 1;
+-- =========================================
+-- 2. INSERÇÃO DE DADOS (DML)
+-- =========================================
 
-    while (j >= 0 && arr[j].preco > atual.preco) {
-      arr[j + 1] = arr[j];
-      j--;
-    }
-    arr[j + 1] = atual;
-  }
+INSERT INTO produtos (nome, preco, estoque) VALUES
+('Teclado Mecânico', 250.00, 10),
+('Mouse Gamer', 120.00, 15),
+('Monitor 24"', 900.00, 5),
+('Headset', 180.00, 20),
+('Mousepad', 40.00, 30);
 
-  return arr;
-}
+INSERT INTO clientes (nome, email, total_compras) VALUES
+('Ana Silva', 'ana@email.com', 0),
+('Bruno Souza', 'bruno@email.com', 0),
+('Carla Lima', 'carla@email.com', 0),
+('Diego Alves', 'diego@email.com', 0),
+('Eduarda Rocha', 'eduarda@email.com', 0);
 
-// 4. ORDENAÇÃO POR ID (para busca binária)
-function ordenarPorId(lista) {
-  let arr = [...lista];
+INSERT INTO pedidos (cliente_id, produto_id, quantidade, valor_total) VALUES
+(1, 1, 1, 250.00),
+(2, 2, 2, 240.00),
+(3, 3, 1, 900.00),
+(4, 4, 1, 180.00),
+(5, 5, 3, 120.00);
 
-  for (let i = 1; i < arr.length; i++) {
-    let atual = arr[i];
-    let j = i - 1;
+-- Exemplo UPDATE
+UPDATE clientes SET total_compras = 500 WHERE id = 1;
 
-    while (j >= 0 && arr[j].id > atual.id) {
-      arr[j + 1] = arr[j];
-      j--;
-    }
-    arr[j + 1] = atual;
-  }
+-- Exemplo DELETE
+DELETE FROM pedidos WHERE id = 5;
 
-  return arr;
-}
+-- =========================================
+-- 3. CONSULTAS (DQL)
+-- =========================================
 
-// 5. BUSCA BINÁRIA POR ID
-function buscaBinariaPorId(listaOrdenada, id) {
-  let inicio = 0;
-  let fim = listaOrdenada.length - 1;
+-- Filtro avançado
+SELECT * FROM produtos
+WHERE preco BETWEEN 100 AND 500
+AND nome LIKE '%Mouse%'
+ORDER BY preco ASC;
 
-  while (inicio <= fim) {
-    let meio = Math.floor((inicio + fim) / 2);
+-- JOIN (relatório completo)
+SELECT 
+    c.nome AS cliente,
+    p.nome AS produto,
+    pe.quantidade,
+    pe.valor_total
+FROM pedidos pe
+INNER JOIN clientes c ON pe.cliente_id = c.id
+INNER JOIN produtos p ON pe.produto_id = p.id;
 
-    if (listaOrdenada[meio].id === id) {
-      return listaOrdenada[meio];
-    }
+-- Funções MySQL (média de preços)
+SELECT AVG(preco) AS media_precos FROM produtos;
 
-    if (listaOrdenada[meio].id < id) {
-      inicio = meio + 1;
-    } else {
-      fim = meio - 1;
-    }
-  }
+-- Contagem de pedidos por cliente
+SELECT cliente_id, COUNT(*) AS total_pedidos
+FROM pedidos
+GROUP BY cliente_id;
 
-  return null;
-}
+-- =========================================
+-- 4. TRIGGER (AUTOMAÇÃO DE ESTOQUE)
+-- =========================================
 
-// =========================
-// EXECUÇÃO DO PROGRAMA
-// =========================
+DELIMITER //
 
-// Listar original
-listarProdutos(produtos);
+CREATE TRIGGER trg_atualiza_estoque
+AFTER INSERT ON pedidos
+FOR EACH ROW
+BEGIN
+    UPDATE produtos
+    SET estoque = estoque - NEW.quantidade
+    WHERE id = NEW.produto_id;
+END//
 
-// Ordenar por preço
-let ordenadoPreco = ordenarPorPreco(produtos);
-console.log("\n--- PRODUTOS ORDENADOS POR PREÇO ---");
-listarProdutos(ordenadoPreco);
+DELIMITER ;
 
-// Buscar produto por ID (exemplo)
-let idBusca = 4;
+-- =========================================
+-- 5. STORED PROCEDURE (CLIENTE VIP)
+-- =========================================
 
-let listaOrdenadaPorId = ordenarPorId(produtos);
-let resultado = buscaBinariaPorId(listaOrdenadaPorId, idBusca);
+DELIMITER //
 
-console.log("\n--- BUSCA BINÁRIA ---");
-if (resultado) {
-  console.log(`Produto encontrado: ID ${resultado.id} | ${resultado.nome} | R$ ${resultado.preco}`);
-} else {
-  console.log("Produto não encontrado!");
-}
+CREATE PROCEDURE verificar_cliente_vip(IN clienteID INT)
+BEGIN
+    DECLARE total DECIMAL(10,2);
+
+    SELECT total_compras INTO total
+    FROM clientes
+    WHERE id = clienteID;
+
+    IF total > 500 THEN
+        SELECT 'Cliente VIP' AS status;
+    ELSE
+        SELECT 'Cliente Normal' AS status;
+    END IF;
+END//
+
+DELIMITER ;
+
+-- Exemplo de uso:
+-- CALL verificar_cliente_vip(1);
+
+-- =========================================
+-- 6. ÍNDICE (OTIMIZAÇÃO)
+-- =========================================
+
+CREATE INDEX idx_produto_nome ON produtos(nome);
+
+-- =========================================
+-- 7. USUÁRIO E PRIVILÉGIOS (SEGURANÇA DBA)
+-- =========================================
+
+CREATE USER 'usuario_loja'@'localhost' IDENTIFIED BY '123456';
+
+GRANT SELECT, INSERT, UPDATE ON *.* TO 'usuario_loja'@'localhost';
+
+FLUSH PRIVILEGES;
