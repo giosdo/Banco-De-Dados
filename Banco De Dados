@@ -1,0 +1,103 @@
+// =========================
+// MINI CATÁLOGO DE LOJA
+// =========================
+
+// 1. DADOS (5 produtos)
+let produtos = [
+  { id: 3, nome: "Mouse Gamer", preco: 120.0 },
+  { id: 1, nome: "Teclado Mecânico", preco: 250.0 },
+  { id: 5, nome: "Monitor 24\"", preco: 900.0 },
+  { id: 2, nome: "Headset", preco: 180.0 },
+  { id: 4, nome: "Mousepad", preco: 40.0 }
+];
+
+// 2. LISTAR PRODUTOS
+function listarProdutos(lista) {
+  console.log("\n--- LISTA DE PRODUTOS ---");
+  lista.forEach(p => {
+    console.log(`ID: ${p.id} | Nome: ${p.nome} | Preço: R$ ${p.preco}`);
+  });
+}
+
+// 3. ORDENAÇÃO (Insertion Sort por preço - do menor para o maior)
+function ordenarPorPreco(lista) {
+  let arr = [...lista];
+
+  for (let i = 1; i < arr.length; i++) {
+    let atual = arr[i];
+    let j = i - 1;
+
+    while (j >= 0 && arr[j].preco > atual.preco) {
+      arr[j + 1] = arr[j];
+      j--;
+    }
+    arr[j + 1] = atual;
+  }
+
+  return arr;
+}
+
+// 4. ORDENAÇÃO POR ID (para busca binária)
+function ordenarPorId(lista) {
+  let arr = [...lista];
+
+  for (let i = 1; i < arr.length; i++) {
+    let atual = arr[i];
+    let j = i - 1;
+
+    while (j >= 0 && arr[j].id > atual.id) {
+      arr[j + 1] = arr[j];
+      j--;
+    }
+    arr[j + 1] = atual;
+  }
+
+  return arr;
+}
+
+// 5. BUSCA BINÁRIA POR ID
+function buscaBinariaPorId(listaOrdenada, id) {
+  let inicio = 0;
+  let fim = listaOrdenada.length - 1;
+
+  while (inicio <= fim) {
+    let meio = Math.floor((inicio + fim) / 2);
+
+    if (listaOrdenada[meio].id === id) {
+      return listaOrdenada[meio];
+    }
+
+    if (listaOrdenada[meio].id < id) {
+      inicio = meio + 1;
+    } else {
+      fim = meio - 1;
+    }
+  }
+
+  return null;
+}
+
+// =========================
+// EXECUÇÃO DO PROGRAMA
+// =========================
+
+// Listar original
+listarProdutos(produtos);
+
+// Ordenar por preço
+let ordenadoPreco = ordenarPorPreco(produtos);
+console.log("\n--- PRODUTOS ORDENADOS POR PREÇO ---");
+listarProdutos(ordenadoPreco);
+
+// Buscar produto por ID (exemplo)
+let idBusca = 4;
+
+let listaOrdenadaPorId = ordenarPorId(produtos);
+let resultado = buscaBinariaPorId(listaOrdenadaPorId, idBusca);
+
+console.log("\n--- BUSCA BINÁRIA ---");
+if (resultado) {
+  console.log(`Produto encontrado: ID ${resultado.id} | ${resultado.nome} | R$ ${resultado.preco}`);
+} else {
+  console.log("Produto não encontrado!");
+}
